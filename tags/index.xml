@@ -7,6 +7,28 @@
     <generator>Hugo</generator>
     <language>zh-cn</language>
     <copyright>gresces.github.io</copyright>
+    <lastBuildDate>Tue, 10 Jun 2025 23:46:32 +0800</lastBuildDate>
     <atom:link href="https://gresces.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Agent</title>
+      <link>https://gresces.github.io/tags/agent/</link>
+      <pubDate>Tue, 10 Jun 2025 23:46:32 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/agent/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Mcp</title>
+      <link>https://gresces.github.io/tags/mcp/</link>
+      <pubDate>Tue, 10 Jun 2025 23:46:32 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/mcp/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>N8n</title>
+      <link>https://gresces.github.io/tags/n8n/</link>
+      <pubDate>Tue, 10 Jun 2025 23:46:32 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/n8n/</guid>
+      <description></description>
+    </item>
   </channel>
 </rss>

@@ -2,10 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://gresces.github.io/categories/</loc>
+    <loc>https://gresces.github.io/tags/agent/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
   </url><url>
     <loc>https://gresces.github.io/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
+  </url><url>
+    <loc>https://gresces.github.io/tags/mcp/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
+  </url><url>
+    <loc>https://gresces.github.io/tags/n8n/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
+  </url><url>
+    <loc>https://gresces.github.io/posts/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
   </url><url>
     <loc>https://gresces.github.io/tags/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
+  </url><url>
+    <loc>https://gresces.github.io/posts/agent-in-n8n/</loc>
+    <lastmod>2025-06-10T23:46:32+08:00</lastmod>
+  </url><url>
+    <loc>https://gresces.github.io/categories/</loc>
   </url>
 </urlset>

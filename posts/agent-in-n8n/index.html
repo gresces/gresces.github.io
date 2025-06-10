@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>
+    
+        基于n8n的MCP实用构建 :: Gresces
+    
+</title>
+
+      <link rel="stylesheet" href="/css/main.min.47733d85264959e5a5a892762c45a180470fb19ebcc619d02359f40ac5c1c160.css" integrity="sha256-R3M9hSZJWeWlqJJ2LEWhgEcPsZ68xhnQI1n0CsXBwWA=" crossorigin="anonymous">
+
+
+      <script src="/js/main.eb468a84bf065e71037d2980609a9f48dbd20abf07a4d5e67fdb7fc275fa52dc.js" integrity="sha256-60aKhL8GXnEDfSmAYJqfSNvSCr8HpNXmf9t/wnX6Utw=" crossorigin="anonymous"></script>
+
+</head>
+
+<body id="main-container" class="grid-container">
+
+  <a href="/" id="header-icon">
+    <div class="outline no-select" style="height: 100%;display: grid; place-items: center;">
+    <h1 style="margin: 0; text-align: center;">Gresces</h1>
+</div>
+  </a>
+
+  <div class="header-menu outline no-select">
+    
+  <nav style="height:100%; display:grid;">
+    <ul id="menu-list">
+    
+      <a class="menu-list-li" aria-current="true" class="ancestor" href="/posts/">Posts</a>
+    
+    
+      <a class="menu-list-li" href="/tags/">Tags</a>
+    
+    </ul>
+  </nav>
+
+  </div>
+
+  <div class="header-control outline no-select">
+    <button id="theme-toggle">
+  <span id="theme-icon">[dark]</span>
+</button>
+  </div>
+
+  <div class="main outline">
+    
+
+  <div class="grid-container single-container">
+
+    <div class="single-title-container grid-container outline">
+
+      <div class="single-title-container-title center-align">
+        <h1 class="char-limit">基于n8n的MCP实用构建</h1>
+      </div>      
+
+      <div class="single-title-container-date">
+        <span class="date">
+          
+          
+          <time datetime="2025-06-10T23:46:32&#43;08:00">June 10, 2025</time>
+        </span>
+      </div>
+
+      <div class="single-title-container-author">
+        <span class="author">
+          
+            Guo Yangfan
+          
+        </span>
+      </div>
+    </div>
+
+    <div class="single-content outline">
+      <p>本文提供：</p>
+<ul>
+<li>在n8n中构建一个agent工作流</li>
+<li>在n8n中添加自定义mcp client</li>
+<li>使用python构建mcp server并在n8n工作流中连接</li>
+</ul>
+<h2 id="0-背景">0. 背景</h2>
+<p>本文读者一般对MCP有一定了解，这里不进行解释。如果你需要知道背景知识，请看：</p>
+<p><a href="https://zhuanlan.zhihu.com/p/29001189476">LastWhisper：MCP (Model Context Protocol)，一篇就够了。</a></p>
+<p>本文使用n8n构建一个完整的agent工作流，需要你在本机或服务器上部署一个n8n实例，当然如果你使用其他flow工具，可以参考本文章的mcp server构建部分。本文不提供n8n部署相关知识。</p>
+<p>注意，最好使用高于1.88版本的n8n，否则使用deepseek作为LLM时可能会有<a href="https://github.com/n8n-io/n8n/issues/14574">422报错</a>。</p>
+<p><a href="https://zhuanlan.zhihu.com/p/1905634565013369483">GeGarron：n8n 全方位安装指南：从本地部署到云端运行</a></p>
+<h2 id="1-在n8n中构建一个agent工作流">1. 在n8n中构建一个agent工作流</h2>
+<h3 id="11-创建一个工作流">1.1 创建一个工作流</h3>
+<p>在n8n中通常是以工作流为单位进行工作的，在本例中，一个完整的聊天agent即为一个工作流。
+在overview界面点击右上角的<strong>Create Workflow</strong>创建一个工作流。
+在n8n中，一个工作流的开始一般是一个触发器，点击中间的 + 图标，有很多触发器可供选择，这里选择<strong>On chat message</strong>触发器即可，这个触发器在聊天框输入语句进行触发。
+
+  <figure class="figure">
+    <img class="img" src="image.png">
+    <figcaption class="center-align caption-text">选择这个trigger</figcaption>
+  </figure>
+
+</p>
+<h3 id="12-创建agent">1.2 创建agent</h3>
+<p>在创建完一个最基础的工作流之后，需要丰富这个工作流的内容，特别是加入LLM进行工具调用指导。</p>
+<p>点击第一个trigger节点的加号，创建第二个节点，输入agent，选择<strong>AI Agent</strong>，之后点击左上角退回画布，可以发现多了一个Agent节点。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-1.png">
+    <figcaption class="center-align caption-text">选择AI Agent</figcaption>
+  </figure>
+
+</p>
+<p>可以发现，在Agent节点中，我们可以自定义的子节点（这玩意儿在n8n中叫sub-node）有：Chat Model、Memory和Tool。这几个子节点分别表示：</p>
+<ul>
+<li>Chat Model 接入的大语言模型，输入用户输入后输出工具调用信息，输入工具返回信息输出加工后的信息</li>
+<li>Memory 记录对话内容，提供上下文功能</li>
+<li>Tool 工具，agent&quot;调用&quot;的过程（mcp client、n8n节点或者n8n工作流）</li>
+</ul>
+<p>![](image-2.png &ldquo;AI Agent节点的&quot;接口&rdquo;&quot;)</p>
+<p>下面我们将逐项配置这三项：</p>
+<h4 id="chat-model">Chat Model</h4>
+<p>起手式点击 + 号，可以看到n8n提供了一系列的聊天模型节点供使用，比如DeepSeek和OpenAI。由于DeepSeek提供的API和OpenAI的API形式上相同，所以如果你选择DeepSeek模型，这两种节点都可以使用，本例使用OpenAI节点接入DeepSeek API。</p>
+<p>国内使用&quot;SuckDick&quot;模型非常方便，在<a href="https://platform.deepseek.com/">DeepSeek开放平台</a>注册后获取一个API key即可。</p>
+<p>双击加入的OpenAI节点，在Credential下拉菜单中选择<strong>创建新的凭证</strong>，填入获取到的API key，并按照<a href="https://api-docs.deepseek.com/">DeepSeek文档</a>中提示的修改Base URL即可。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-3.png">
+    <figcaption class="center-align caption-text">点就完了</figcaption>
+  </figure>
+
+</p>
+<p>![](image-4.png &ldquo;只需要修改API Key和Base URL，成功后会有绿色提示&quot;Connection tested successfully&rdquo;&quot;)</p>
+<p>添加凭证后，在Open AI节点中可以选择聊天模型，选择deepseek-chat就OK，你也可以试试另一个是什么效果。</p>
+<p>至此，一个最简单的没什么精用的Agent就整好了，你可以在聊天栏中愉快地和记忆为0的大模型聊天了。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-5.png">
+    <figcaption class="center-align caption-text">一个聪明的大模型被玩坏了的样子</figcaption>
+  </figure>
+
+</p>
+<h4 id="memory">Memory</h4>
+<p>很显然，如果你用过deepseek官网“受过良好调教”的大模型的话，你的agent就像一个没有记忆的大傻子。</p>
+<p>我们可以通过添加记忆模块为大模型添加上下文功能，这就是第二个子节点Memory的作用。</p>
+<p>这里点击Memory相应的 + 号，选择Simple Memory节点即可，这个节点配置最简单，不需要额外的组件，而且效果还行，在配置中，你可以设置上下文长度。推荐玩一下，如果你很急，保持默认的5就行。</p>
+<p>你也可以试一下没有Memory功能的Agent。</p>
+<h4 id="tool">Tool</h4>
+<p>Tool用来实际执行一些准确性要求高、运算密集或者时效性强的操作。它被Agent节点由LLM指导调用。</p>
+<p>Tool可以添加很多个，这里先添加一个简单的http请求节点试试水，想实现的最简单的从当前互联网获取信息的操作。思路是这样的，这个Tool可以通过必应搜索获取某个关键词的搜索结果，之后返回页面信息。LLM接收返回的页面信息，告诉我们页面上的内容有什么。</p>
+<p>n8n中有个http请求节点，可以发送GET、POST等请求并获取返回数据（response data），可以使用这个东西来发送构造好的URL以及Query参数，并获取页面html。</p>
+<p>思路成立，实验开始：在Tool子节点处添加HTTP Request Tool节点，并填入下面图片中的参数。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-6.png">
+    <figcaption class="center-align caption-text">添加这个节点</figcaption>
+  </figure>
+
+</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-7.png">
+    <figcaption class="center-align caption-text">参数可以照抄，可以点击Docs研究一下节点的花活儿</figcaption>
+  </figure>
+
+</p>
+<p>之后在聊天中发出请求，可以发现LLM被调用了两次，工具HTTP Request节点被调用了一次，而左侧的聊天框中实际上只显示了一次对话。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-8.png">
+    <figcaption class="center-align caption-text">AI大人不要杀我🙌🙌🙌</figcaption>
+  </figure>
+
+</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-9.png">
+    <figcaption class="center-align caption-text">数据是错误的</figcaption>
+  </figure>
+
+</p>
+<p>如果你尝试的次数很多，你会发现token消耗得挺快，效果还不好。这是因为HTTP Request返回的是一个HTML网页，很多没用的信息会输入给LLM。所以如果你需要一个高质量的Agent，一些数据处理是有必要的。</p>
+<p>至此，一个勉强能用的Agent堂堂面世。回顾一下，我们首先添加了Agent节点，构成了Agent的骨架，之后添加了它的大脑让它产生思维，为了让它有记忆，又加入了Memory，最后让它有力量，添加了一个工具。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-10.png">
+    <figcaption class="center-align caption-text">这个Agent长这样</figcaption>
+  </figure>
+
+</p>
+<h2 id="2-在n8n中添加自定义mcp-client">2. 在n8n中添加自定义mcp client</h2>
+<p>Agent的智能来源于大语言模型，能力来源于提供的工具。通常为了完成一些特定的工作，需要自行编写工具。</p>
+<p>自己编写的工具可以通过mcp协议作为mcp server提供，在n8n中通过mcp client连接它。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-11.png">
+    <figcaption class="center-align caption-text">图源：https://modelcontextprotocol.io/introduction#general-architecture</figcaption>
+  </figure>
+
+</p>
+<p>上面的这个图估计都被复制烂了，但是很重要。client和server是两部分，server如何与数据资源交互与client无关，而且client和server可以不在一个设备上。</p>
+<h3 id="添加mcp-client节点">添加mcp client节点</h3>
+<p>n8n在1.88版本添加了官方的mcp client节点，在Agent节点的Tool子节点处点击加号（你可以把之前的HTTP请求节点删除掉），选择<strong>MCP Client Tool</strong>节点即可。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-12.png">
+    <figcaption class="center-align caption-text">添加就完了</figcaption>
+  </figure>
+
+</p>
+<p>之后你可以点击这个节点的设置，可以发现三个选项，对于一个MCP Client来说，第一个SSE Endpoint是必填的，后面的取决于需求，SSE Endpoint告诉了MCP Client MCP Server在哪里。</p>
+<p>将它们比作小人是这样的：</p>
+<p>Agent是一个小组，LLM是指挥，它收到外部请求（人类的输入）后，思考了一阵得出了需要Client干活儿的结论，于是它说：“Client，你去做xxx”。Client收到消息后，将指挥提供的信息传给Server，之后等待Server的结果，有结果后把结果告诉指挥LLM。</p>
+<p>这样看起来挺好的，但是LLM事先并不知道Client能干什么活儿，也不知到Client需要什么消息。这就需要MCP协议了，Server会告诉Client它能做什么工作，之后Client将这样的信息告诉LLM，已完成消息的传递。第3节将更清晰地看到这个过程。</p>
+<p>这一节几乎没什么实质性地内容，但似乎是必不可少的。</p>
+<h2 id="3-使用python构建mcp-server并在n8n工作流中连接">3. 使用python构建mcp server并在n8n工作流中连接</h2>
+<p>根据前一节，我们要开发自己的特有Tool，关键在于给MCP Client提供MCP server。本节将通过Python实现。</p>
+<p>MCP提供了很多个语言的SDK，这里选择Python，别问我为啥，我也不知道为啥啊！！！</p>
+<h3 id="31-环境配置">3.1 环境配置</h3>
+<p>用uv管理环境就OK，主要用到的是mcp包</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>uv add mcp
+</span></span></code></pre></div><h3 id="32-开发简单的server">3.2 开发简单的Server</h3>
+<p>之后写个这样的简单server脚本：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># server.py</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> mcp.server.fastmcp <span style="color:#f92672">import</span> FastMCP
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mcp <span style="color:#f92672">=</span> FastMCP(<span style="color:#e6db74">&#34;test&#34;</span>)
+</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>settings<span style="color:#f92672">.</span>port <span style="color:#f92672">=</span> <span style="color:#ae81ff">9000</span>
+</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>settings<span style="color:#f92672">.</span>host <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">calculate</span>(expression: str) <span style="color:#f92672">-&gt;</span> float:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;计算一个数学表达式
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        expression: 要计算的数学表达式
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        float: 计算结果
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> eval(expression)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">Exception</span> <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;计算错误 </span><span style="color:#e6db74">{</span>str(e)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>add_tool(calculate, <span style="color:#e6db74">&#34;Calculator&#34;</span>, <span style="color:#e6db74">&#34;Calculate an expression&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>   mcp<span style="color:#f92672">.</span>run(<span style="color:#e6db74">&#34;sse&#34;</span>)
+</span></span></code></pre></div><p>大概是这样的：</p>
+<ol>
+<li>导包起手式</li>
+<li>定义一个mcp server并设置IP和端口</li>
+<li>定义一个函数用于计算表达式，这个函数是脱裤子放屁：接收表达式，并传给eval函数，返回结果</li>
+<li>在mcp中添加这个函数作为tool</li>
+<li>使用sse方式运行mcp server</li>
+</ol>
+<p>看起来挺简单的，对吧？大概要注意这么几点：</p>
+<ol>
+<li>函数的名字要简明，行内的注释要尽量有</li>
+<li>可以使用装饰器添加这个函数，效果和add_tool方法是一样的</li>
+<li>这里的运行方式是sse，是因为n8n中的Client节点只认这个</li>
+</ol>
+<h3 id="33-测试一下">3.3 测试一下</h3>
+<p>想要看看这个server在client眼里长什么样子，可以在vscode中加一个这个拓展，可以非常方便地测试自己的Server，你也可以使用Claude Desktop等其他Client。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-13.png">
+    <figcaption class="center-align caption-text">vscode 拓展</figcaption>
+  </figure>
+
+</p>
+<p>首先将MCP Server运行起来</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>uv run server.py
+</span></span></code></pre></div><p>在MCP Inspector窗口中填入Server URL即可点击Connect尝试连接。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-14.png">
+    <figcaption class="center-align caption-text">连接成功，下面是Server运行log，上面是连接成功界面</figcaption>
+  </figure>
+
+</p>
+<p>可以看到可用的工具有之前定义的计算器，点击RUN，即可输入表达式：</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-15.png">
+    <figcaption class="center-align caption-text">计算2的10次方</figcaption>
+  </figure>
+
+</p>
+<p>至此，一个简单的server就创建并部署好了。</p>
+<h3 id="34-使用n8n中的client连接它">3.4 使用n8n中的Client连接它</h3>
+<p>最终目的是要将这个Server提供给n8n，所以需要在n8n的MCP Client节点上连接这个MCP Server，方法非常简单：在Client节点的SSE Endpoint一栏中填入Server URL（本例为http://0.0.0.0:9000/sse，实际地址和端口需要按需填写）即可。</p>
+<p>退出编辑界面，Ctrl + S保存工作流，点击AI Agent的运行按钮，如果可以正常连接的话，不会产生提示，否则会有报错信息。报错大概率是网络连接问题。</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-16.png">
+    <figcaption class="center-align caption-text">点击运行进行测试</figcaption>
+  </figure>
+
+</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-17.png">
+    <figcaption class="center-align caption-text">连接错误，可以排查连接问题</figcaption>
+  </figure>
+
+</p>
+<h3 id="35-使用这个server">3.5 使用这个Server</h3>
+<div class="video-wrapper">
+    <video
+    controls
+    src="video.mp4"
+    
+    
+    >
+        <p>
+            Your browser doesn't support HTML5 video. Here is a
+            <a href="video.mp4">link to the video</a> instead.
+        </p>
+    </video>
+</div>
+
+<p>本节使用python编写了MCP server 并使用n8n中的MCP Client节点连接，如果你有更加复杂的节点需求，只需要更改Server中的工具即可。</p>
+<hr>
+<ol>
+<li><a href="https://modelcontextprotocol.io/">Get started with the Model Context Protocol (MCP)</a></li>
+<li><a href="https://docs.n8n.io/">n8n Docs</a></li>
+</ol>
+
+    </div>
+
+    <div class="single-tags">
+      
+  <div>
+    Tags:
+        <a href="/tags/agent/">[Agent]</a>
+        <a href="/tags/mcp/">[Mcp]</a>
+        <a href="/tags/n8n/">[N8n]</a>
+  </div>
+
+
+    </div>
+  </div>
+
+  </div>
+
+  <div class="left-footer outline">
+
+  </div>
+
+  <div class="footer outline">
+    
+    <p style="text-align: center;">© 2025 Guo Yangfan | gresces.github.io</p>
+
+
+  </div>
+
+  <div class="right-footer outline">
+
+  </div>
+
+</body>
+
+</html>
