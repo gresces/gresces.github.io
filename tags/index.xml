@@ -7,8 +7,36 @@
     <generator>Hugo</generator>
     <language>zh-cn</language>
     <copyright>gresces.github.io</copyright>
-    <lastBuildDate>Tue, 10 Jun 2025 23:46:32 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 12 Jun 2025 19:25:11 +0800</lastBuildDate>
     <atom:link href="https://gresces.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Osdi</title>
+      <link>https://gresces.github.io/tags/osdi/</link>
+      <pubDate>Thu, 12 Jun 2025 19:25:11 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/osdi/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Python</title>
+      <link>https://gresces.github.io/tags/python/</link>
+      <pubDate>Thu, 12 Jun 2025 19:25:11 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/python/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Software</title>
+      <link>https://gresces.github.io/tags/software/</link>
+      <pubDate>Thu, 12 Jun 2025 19:25:11 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/software/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Tool</title>
+      <link>https://gresces.github.io/tags/tool/</link>
+      <pubDate>Thu, 12 Jun 2025 19:25:11 +0800</pubDate>
+      <guid>https://gresces.github.io/tags/tool/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Agent</title>
       <link>https://gresces.github.io/tags/agent/</link>

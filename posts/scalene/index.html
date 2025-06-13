@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width">
 <title>
     
-        Posts :: Gresces
+        Scalene: Python分析器 :: Gresces
     
 </title>
 
@@ -30,7 +30,7 @@
   <nav style="height:100%; display:grid;">
     <ul id="menu-list">
     
-      <a class="menu-list-li" aria-current="page" class="active" href="/posts/">Posts</a>
+      <a class="menu-list-li" aria-current="true" class="ancestor" href="/posts/">Posts</a>
     
     
       <a class="menu-list-li" href="/tags/">Tags</a>
@@ -49,18 +49,33 @@
   <div class="main outline">
     
 
-<div id="list-container" class="grid-container no-select">
-  <div id="list-container-title" class="outline">
-    <h1 class="center-align">Posts</h1>
-    
-  </div>
-  <div id="list-container-list" class="outline">
-    
-    <a href="/posts/scalene/">
-      <div>
-        <h2 style="margin: 0; overflow-wrap: anywhere;">Scalene: Python分析器</h2>
-        <div class="no-a-color">
-          <p>本文介绍一下SCALENE的实现原理。</p>
+  <div class="grid-container single-container">
+
+    <div class="single-title-container grid-container outline">
+
+      <div class="single-title-container-title center-align">
+        <h1 class="char-limit">Scalene: Python分析器</h1>
+      </div>      
+
+      <div class="single-title-container-date">
+        <span class="date">
+          
+          
+          <time datetime="2025-06-12T19:25:11&#43;08:00">June 12, 2025</time>
+        </span>
+      </div>
+
+      <div class="single-title-container-author">
+        <span class="author">
+          
+            Guo Yangfan
+          
+        </span>
+      </div>
+    </div>
+
+    <div class="single-content outline">
+      <p>本文介绍一下SCALENE的实现原理。</p>
 <p>SCALENE是一个专门为Python设计的分析器，能够同时分析CPU时间、内存使用情况和GPU使用情况，并提供细粒度(行粒度)的性能信息。</p>
 <p>总之，按照文章的说明，它比之前的分析器都NB。</p>
 <p>文章：<a href="https://www.usenix.org/conference/osdi23/presentation/berger">OSDI 2023: Triangulating Python Performance Issues with Scalene</a></p>
@@ -132,83 +147,22 @@
 <li><a href="https://www.usenix.org/conference/osdi23/presentation/berger">OSDI 2023: Triangulating Python Performance Issues with Scalene</a></li>
 <li><a href="https://zhuanlan.zhihu.com/p/642939534">OSDI 2023论文评述 Day1</a></li>
 </ol>
-        </div>
-      </div>
-    </a>
-    
-    <a href="/posts/agent-in-n8n/">
-      <div>
-        <h2 style="margin: 0; overflow-wrap: anywhere;">基于n8n的MCP实用构建</h2>
-        <div class="no-a-color">
-          <p>本文提供：</p>
-<ul>
-<li>在n8n中构建一个agent工作流</li>
-<li>在n8n中添加自定义mcp client</li>
-<li>使用python构建mcp server并在n8n工作流中连接</li>
-</ul>
-<h2 id="0-背景">0. 背景</h2>
-<p>本文读者一般对MCP有一定了解，这里不进行解释。如果你需要知道背景知识，请看：</p>
-<p><a href="https://zhuanlan.zhihu.com/p/29001189476">LastWhisper：MCP (Model Context Protocol)，一篇就够了。</a></p>
-<p>本文使用n8n构建一个完整的agent工作流，需要你在本机或服务器上部署一个n8n实例，当然如果你使用其他flow工具，可以参考本文章的mcp server构建部分。本文不提供n8n部署相关知识。</p>
-<p>注意，最好使用高于1.88版本的n8n，否则使用deepseek作为LLM时可能会有<a href="https://github.com/n8n-io/n8n/issues/14574">422报错</a>。</p>
-<p><a href="https://zhuanlan.zhihu.com/p/1905634565013369483">GeGarron：n8n 全方位安装指南：从本地部署到云端运行</a></p>
-<h2 id="1-在n8n中构建一个agent工作流">1. 在n8n中构建一个agent工作流</h2>
-<h3 id="11-创建一个工作流">1.1 创建一个工作流</h3>
-<p>在n8n中通常是以工作流为单位进行工作的，在本例中，一个完整的聊天agent即为一个工作流。
-在overview界面点击右上角的<strong>Create Workflow</strong>创建一个工作流。
-在n8n中，一个工作流的开始一般是一个触发器，点击中间的 + 图标，有很多触发器可供选择，这里选择<strong>On chat message</strong>触发器即可，这个触发器在聊天框输入语句进行触发。
 
-  <figure class="figure">
-    <img class="img" src="image.png">
-    <figcaption class="center-align caption-text">
+    </div>
+
+    <div class="single-tags">
       
-      选择这个trigger
-    </figcaption>
-  </figure>
-
-</p>
-<h3 id="12-创建agent">1.2 创建agent</h3>
-<p>在创建完一个最基础的工作流之后，需要丰富这个工作流的内容，特别是加入LLM进行工具调用指导。</p>
-<p>点击第一个trigger节点的加号，创建第二个节点，输入agent，选择<strong>AI Agent</strong>，之后点击左上角退回画布，可以发现多了一个Agent节点。</p>
-<p>
-  <figure class="figure">
-    <img class="img" src="image-1.png">
-    <figcaption class="center-align caption-text">
-      
-      选择AI Agent
-    </figcaption>
-  </figure>
-
-</p>
-<p>可以发现，在Agent节点中，我们可以自定义的子节点（这玩意儿在n8n中叫sub-node）有：Chat Model、Memory和Tool。这几个子节点分别表示：</p>
-<ul>
-<li>Chat Model 接入的大语言模型，输入用户输入后输出工具调用信息，输入工具返回信息输出加工后的信息</li>
-<li>Memory 记录对话内容，提供上下文功能</li>
-<li>Tool 工具，agent&quot;调用&quot;的过程（mcp client、n8n节点或者n8n工作流）</li>
-</ul>
-<p>![](image-2.png &ldquo;AI Agent节点的&quot;接口&rdquo;&quot;)</p>
-<p>下面我们将逐项配置这三项：</p>
-<h4 id="chat-model">Chat Model</h4>
-<p>起手式点击 + 号，可以看到n8n提供了一系列的聊天模型节点供使用，比如DeepSeek和OpenAI。由于DeepSeek提供的API和OpenAI的API形式上相同，所以如果你选择DeepSeek模型，这两种节点都可以使用，本例使用OpenAI节点接入DeepSeek API。</p>
-<p>国内使用&quot;SuckDick&quot;模型非常方便，在<a href="https://platform.deepseek.com/">DeepSeek开放平台</a>注册后获取一个API key即可。</p>
-<p>双击加入的OpenAI节点，在Credential下拉菜单中选择<strong>创建新的凭证</strong>，填入获取到的API key，并按照<a href="https://api-docs.deepseek.com/">DeepSeek文档</a>中提示的修改Base URL即可。</p>
-<p>
-  <figure class="figure">
-    <img class="img" src="image-3.png">
-    <figcaption class="center-align caption-text">
-      
-      点就完了
-    </figcaption>
-  </figure>
-
-</p>
-<p>![](image-4.png &ldquo;只需要修改API Key和Base URL，成功后会有绿色提示&quot;Connection tested successfully&rdquo;&quot;)</p>
-        </div>
-      </div>
-    </a>
-    
+  <div>
+    Tags:
+        <a href="/tags/software/">[Software]</a>
+        <a href="/tags/python/">[Python]</a>
+        <a href="/tags/tool/">[Tool]</a>
+        <a href="/tags/osdi/">[Osdi]</a>
   </div>
-</div>
+
+
+    </div>
+  </div>
 
   </div>
 
@@ -218,7 +172,7 @@
 
   <div class="footer outline">
     
-    <p style="text-align: center;">© 2025 gresces.github.io</p>
+    <p style="text-align: center;">© 2025 Guo Yangfan | gresces.github.io</p>
 
 
   </div>
