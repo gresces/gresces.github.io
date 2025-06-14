@@ -60,78 +60,16 @@
       <div>
         <h2 style="margin: 0; overflow-wrap: anywhere;">Scalene: Python分析器</h2>
         <div class="no-a-color">
-          <p>本文介绍一下SCALENE的实现原理。</p>
-<p>SCALENE是一个专门为Python设计的分析器，能够同时分析CPU时间、内存使用情况和GPU使用情况，并提供细粒度(行粒度)的性能信息。</p>
-<p>总之，按照文章的说明，它比之前的分析器都NB。</p>
-<p>文章：<a href="https://www.usenix.org/conference/osdi23/presentation/berger">OSDI 2023: Triangulating Python Performance Issues with Scalene</a></p>
-<h3 id="cpu-分析">CPU 分析</h3>
-<h4 id="传统方法">传统方法</h4>
-<p>周期性地中断程序执行并检查当前的程序计数器（PC）。时间可以按照现实时间（CPU时间加IO等时间）计算，也可按照CPU时间（虚拟时间）计算。</p>
-<p><strong>原理</strong>：大样本情况下，PC所在进程的次数与进程执行时间成正比。</p>
-<p><strong>局限1</strong>：传统方法不能有效处理Python-本机代码交错执行的性能分析。在解释器没有获得控制权时，无法处理中断，所以执行本机代码时无法通过定时器中断进行抽样分析。</p>
-<p><strong>局限2</strong>：使用抽样方法难以分析子线程的执行时间。Python的信号由主线程处理，所以抽样仅对主线程计时，无法获得子线程的运行时间。</p>
-<p>
-  <figure class="figure">
-    <img class="img" src="image.png" alt="Figure1" id="fig-Figure1">
-    <figcaption class="center-align caption-text">
-      Figure1
-      抽样分析器依赖于定时器中断，但由于Python在执行本机代码时会将中断信号延迟到解释器获得控制权时处理，所以执行本机代码的时无法进行抽样分析。在图中，T表示执行本机代码的时间，这一段时间将无法被计入执行时间内。
-    </figcaption>
-  </figure>
-
-</p>
-<h4 id="本文贡献">本文贡献</h4>
-<p><strong>技术1</strong>：精确的Python-本机代码交错执行计时</p>
-<p>通过信号传递判断当前正在运行Python代码还是本机代码。如果中断信号被延迟处理，则正在运行本机代码，如<a href="#fig-Figure1">Figure1</a>所示。在两次中断之间，通过虚拟时间time.process_time()之差得到本机代码的执行时间。在中断到来时，通过遍历Python堆栈来寻找当前正在执行的代码行，从而对运行时间归因，提供细粒度的分析结果。</p>
-<p><strong>技术2</strong>：精确的子线程计时</p>
-<ol>
-<li>重新定义主线程的阻塞行为，通过使用猴子补丁的方式将threading.join等阻塞函数修改为循环等待函数。从而保证主线程能够一直处理定时器中断。</li>
-<li>为每个线程维护一个状态标志，主线程处理信号时，遍历所有线程，找到当前正在执行的线程，并获取其调用栈。</li>
-<li>通过字节码反汇编，通过CALL(CALL, CALL_FUNCTION, CALL_METHOD)来分析当前执行的代码行。如果执行Python代码，则很快就会进入跳转目标，否则若执行本机代码，则会一直停留在CALL指令上。</li>
-</ol>
-<h3 id="内存分析">内存分析</h3>
-<h4 id="传统方法-1">传统方法</h4>
-<p>Rate-Based Sampling：基于抽样，抽样的次数正比于分配或释放的内存数量，例如每分配或释放512KB采样一次。</p>
-<p><strong>局限</strong>：无法帮助定位内存泄漏。尽管可以记录内存分配的情况，以及被哪些代码占用了，可能存在内存问题，但不能说明这是内存泄漏。</p>
-<h4 id="本文方法">本文方法</h4>
-<p>
-  <figure class="figure">
-    <img class="img" src="image-1.png" alt="Figure2" id="fig-Figure2">
-    <figcaption class="center-align caption-text">
-      Figure2
-      两种采样方式的对比，菱形表示本文的采样方式，可以明显地看到采样次数的下降
-    </figcaption>
-  </figure>
-
-</p>
-<p><strong>原理</strong>：使用基于阈值的(Threshold-Based)采样而不是基于分配数量的采样。当内存的改变量大于设定阈值(|Alloca-Free|&gt;Threshold)时，进行采样操作。</p>
-<p><strong>优势</strong>：降低了采样次数，并减少了运行时开销。如<a href="#fig-Figure2">Figure2</a>所示。</p>
-<p><strong>方法</strong>：</p>
-<ol>
-<li>拦截了系统内存分配器调用和Python的内置内存分配器，并替换为自己的shim分配器使用，<a href="https://dl.acm.org/doi/abs/10.1145/381694.378821">已有代码</a>改写系统分配器调用，并通过LD_PRELOAD(Linux)或者DYLD_INSERT_LIBRARIES(Mac OS X)注入。对于Python内部的分配器，使用Python的自定义API修改实现</li>
-<li>在基于阈值的采样触发时，追踪产生申请或释放内存的语句，并通过后台线程记录统计信息。</li>
-<li>在采样触发时，统计各个对象分配和释放的记录，并通过Laplace’s Rule of Succession来计算内存泄漏发生的可能性。</li>
-</ol>
-<h3 id="gpu-分析">GPU 分析</h3>
-<p><strong>方法</strong> 在配备NVIDIA GPU的系统上执行行级GPU利用率和内存分析，每进行一次CPU采样时，就收集当前使用的总GPU内存和利用率，并将其与当前执行的代码行相关联，从而帮助Python程序员确定他们是否有效地利用了GPU。</p>
-<h3 id="总结">总结</h3>
-<h4 id="亮点">亮点</h4>
-<p>本文的亮点是在CPU和内存上的抽样工作。</p>
-<ol>
-<li>主要是CPU上的抽样，对于原生代码/外部库的运行时间区分以及多线程之间的运行时间区分，通过针对Python解释器的语言特性进行特殊化的处理，有可能可以拓展到其他的脚本/解释型语言上。</li>
-<li>而对于内存的抽样，则体现在新的抽样策略的改进，并对于之前的分析器难以进行的内存泄漏检测提出了解决方案。</li>
-</ol>
-<h4 id="不足">不足</h4>
-<ol>
-<li>对于GPU的分析像是狗尾续貂，强行增加来说明自己工作的NB。</li>
-<li>CPU的抽样只是基于某行代码的运行时间，未必能够表示CPU的实际占用率，例如sleep的执行。</li>
-<li>内存分析中的泄漏检测是基于概率，还需要进一步地核实是否发生了内存泄漏，即有误报，同时无法证明没有漏报。</li>
-</ol>
-<hr>
-<ol>
-<li><a href="https://www.usenix.org/conference/osdi23/presentation/berger">OSDI 2023: Triangulating Python Performance Issues with Scalene</a></li>
-<li><a href="https://zhuanlan.zhihu.com/p/642939534">OSDI 2023论文评述 Day1</a></li>
-</ol>
+          <p>本文介绍一下SCALENE的实现原理。SCALENE是一个专门为Python设计的分析器，能够同时分析CPU时间、内存使用情况和GPU使用情况，并提供细粒度(行粒度)的性能信息。</p>
+        </div>
+      </div>
+    </a>
+    
+    <a href="/posts/softwares-with-the-most-vulnerabilities/">
+      <div>
+        <h2 style="margin: 0; overflow-wrap: anywhere;">软件漏洞排行</h2>
+        <div class="no-a-color">
+          <p>在进行程序分析时可能会想要知道哪些软件的漏洞更多，从而对已有的方法进行“回测”。本文提供了一个漏洞排行列表以供使用。</p>
         </div>
       </div>
     </a>
@@ -146,63 +84,6 @@
 <li>在n8n中添加自定义mcp client</li>
 <li>使用python构建mcp server并在n8n工作流中连接</li>
 </ul>
-<h2 id="0-背景">0. 背景</h2>
-<p>本文读者一般对MCP有一定了解，这里不进行解释。如果你需要知道背景知识，请看：</p>
-<p><a href="https://zhuanlan.zhihu.com/p/29001189476">LastWhisper：MCP (Model Context Protocol)，一篇就够了。</a></p>
-<p>本文使用n8n构建一个完整的agent工作流，需要你在本机或服务器上部署一个n8n实例，当然如果你使用其他flow工具，可以参考本文章的mcp server构建部分。本文不提供n8n部署相关知识。</p>
-<p>注意，最好使用高于1.88版本的n8n，否则使用deepseek作为LLM时可能会有<a href="https://github.com/n8n-io/n8n/issues/14574">422报错</a>。</p>
-<p><a href="https://zhuanlan.zhihu.com/p/1905634565013369483">GeGarron：n8n 全方位安装指南：从本地部署到云端运行</a></p>
-<h2 id="1-在n8n中构建一个agent工作流">1. 在n8n中构建一个agent工作流</h2>
-<h3 id="11-创建一个工作流">1.1 创建一个工作流</h3>
-<p>在n8n中通常是以工作流为单位进行工作的，在本例中，一个完整的聊天agent即为一个工作流。
-在overview界面点击右上角的<strong>Create Workflow</strong>创建一个工作流。
-在n8n中，一个工作流的开始一般是一个触发器，点击中间的 + 图标，有很多触发器可供选择，这里选择<strong>On chat message</strong>触发器即可，这个触发器在聊天框输入语句进行触发。
-
-  <figure class="figure">
-    <img class="img" src="image.png">
-    <figcaption class="center-align caption-text">
-      
-      选择这个trigger
-    </figcaption>
-  </figure>
-
-</p>
-<h3 id="12-创建agent">1.2 创建agent</h3>
-<p>在创建完一个最基础的工作流之后，需要丰富这个工作流的内容，特别是加入LLM进行工具调用指导。</p>
-<p>点击第一个trigger节点的加号，创建第二个节点，输入agent，选择<strong>AI Agent</strong>，之后点击左上角退回画布，可以发现多了一个Agent节点。</p>
-<p>
-  <figure class="figure">
-    <img class="img" src="image-1.png">
-    <figcaption class="center-align caption-text">
-      
-      选择AI Agent
-    </figcaption>
-  </figure>
-
-</p>
-<p>可以发现，在Agent节点中，我们可以自定义的子节点（这玩意儿在n8n中叫sub-node）有：Chat Model、Memory和Tool。这几个子节点分别表示：</p>
-<ul>
-<li>Chat Model 接入的大语言模型，输入用户输入后输出工具调用信息，输入工具返回信息输出加工后的信息</li>
-<li>Memory 记录对话内容，提供上下文功能</li>
-<li>Tool 工具，agent&quot;调用&quot;的过程（mcp client、n8n节点或者n8n工作流）</li>
-</ul>
-<p>![](image-2.png &ldquo;AI Agent节点的&quot;接口&rdquo;&quot;)</p>
-<p>下面我们将逐项配置这三项：</p>
-<h4 id="chat-model">Chat Model</h4>
-<p>起手式点击 + 号，可以看到n8n提供了一系列的聊天模型节点供使用，比如DeepSeek和OpenAI。由于DeepSeek提供的API和OpenAI的API形式上相同，所以如果你选择DeepSeek模型，这两种节点都可以使用，本例使用OpenAI节点接入DeepSeek API。</p>
-<p>国内使用&quot;SuckDick&quot;模型非常方便，在<a href="https://platform.deepseek.com/">DeepSeek开放平台</a>注册后获取一个API key即可。</p>
-<p>双击加入的OpenAI节点，在Credential下拉菜单中选择<strong>创建新的凭证</strong>，填入获取到的API key，并按照<a href="https://api-docs.deepseek.com/">DeepSeek文档</a>中提示的修改Base URL即可。</p>
-<p>
-  <figure class="figure">
-    <img class="img" src="image-3.png">
-    <figcaption class="center-align caption-text">
-      
-      点就完了
-    </figcaption>
-  </figure>
-
-</p>
-<p>![](image-4.png &ldquo;只需要修改API Key和Base URL，成功后会有绿色提示&quot;Connection tested successfully&rdquo;&quot;)</p>
         </div>
       </div>
     </a>
