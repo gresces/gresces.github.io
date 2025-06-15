@@ -30,10 +30,10 @@
   <nav style="height:100%; display:grid;">
     <ul id="menu-list">
     
-      <a class="menu-list-li" aria-current="true" class="ancestor" href="/posts/">Posts</a>
+      <a class="menu-list-li center-align" aria-current="true" class="ancestor" href="/posts/">Posts</a>
     
     
-      <a class="menu-list-li" href="/tags/">Tags</a>
+      <a class="menu-list-li center-align" href="/tags/">Tags</a>
     
     </ul>
   </nav>
@@ -61,7 +61,7 @@
         <span class="date">
           
           
-          <time datetime="2025-06-10T23:46:32&#43;08:00">June 10, 2025</time>
+          <time datetime="2025-06-11T00:28:22&#43;08:00">June 11, 2025</time>
         </span>
       </div>
 
@@ -89,10 +89,8 @@
 <p><a href="https://zhuanlan.zhihu.com/p/1905634565013369483">GeGarron：n8n 全方位安装指南：从本地部署到云端运行</a></p>
 <h2 id="1-在n8n中构建一个agent工作流">1. 在n8n中构建一个agent工作流</h2>
 <h3 id="11-创建一个工作流">1.1 创建一个工作流</h3>
-<p>在n8n中通常是以工作流为单位进行工作的，在本例中，一个完整的聊天agent即为一个工作流。
-在overview界面点击右上角的<strong>Create Workflow</strong>创建一个工作流。
-在n8n中，一个工作流的开始一般是一个触发器，点击中间的 + 图标，有很多触发器可供选择，这里选择<strong>On chat message</strong>触发器即可，这个触发器在聊天框输入语句进行触发。
-
+<p>在n8n中通常是以工作流为单位进行工作的，在本例中，一个完整的聊天agent即为一个工作流。 在overview界面点击右上角的<strong>Create Workflow</strong>创建一个工作流。 在n8n中，一个工作流的开始一般是一个触发器，点击中间的 + 图标，有很多触发器可供选择，这里选择<strong>On chat message</strong>触发器即可，这个触发器在聊天框输入语句进行触发。</p>
+<p>
   <figure class="figure">
     <img class="img" src="image.png">
     <figcaption class="center-align caption-text">
@@ -121,7 +119,16 @@
 <li>Memory 记录对话内容，提供上下文功能</li>
 <li>Tool 工具，agent&quot;调用&quot;的过程（mcp client、n8n节点或者n8n工作流）</li>
 </ul>
-<p>![](image-2.png &ldquo;AI Agent节点的&quot;接口&rdquo;&quot;)</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="image-2.png">
+    <figcaption class="center-align caption-text">
+      
+      AI Agent节点的接口
+    </figcaption>
+  </figure>
+
+</p>
 <p>下面我们将逐项配置这三项：</p>
 <h4 id="chat-model">Chat Model</h4>
 <p>起手式点击 + 号，可以看到n8n提供了一系列的聊天模型节点供使用，比如DeepSeek和OpenAI。由于DeepSeek提供的API和OpenAI的API形式上相同，所以如果你选择DeepSeek模型，这两种节点都可以使用，本例使用OpenAI节点接入DeepSeek API。</p>
@@ -249,34 +256,42 @@
 <p>MCP提供了很多个语言的SDK，这里选择Python，别问我为啥，我也不知道为啥啊！！！</p>
 <h3 id="31-环境配置">3.1 环境配置</h3>
 <p>用uv管理环境就OK，主要用到的是mcp包</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>uv add mcp
-</span></span></code></pre></div><h3 id="32-开发简单的server">3.2 开发简单的Server</h3>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">uv add mcp</span></span></code></pre></div>
+</div>
+<h3 id="32-开发简单的server">3.2 开发简单的Server</h3>
 <p>之后写个这样的简单server脚本：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># server.py</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> mcp.server.fastmcp <span style="color:#f92672">import</span> FastMCP
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>mcp <span style="color:#f92672">=</span> FastMCP(<span style="color:#e6db74">&#34;test&#34;</span>)
-</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>settings<span style="color:#f92672">.</span>port <span style="color:#f92672">=</span> <span style="color:#ae81ff">9000</span>
-</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>settings<span style="color:#f92672">.</span>host <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">calculate</span>(expression: str) <span style="color:#f92672">-&gt;</span> float:
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;计算一个数学表达式
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Args:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        expression: 要计算的数学表达式
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Returns:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        float: 计算结果
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>:
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> eval(expression)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">Exception</span> <span style="color:#66d9ef">as</span> e:
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;计算错误 </span><span style="color:#e6db74">{</span>str(e)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>mcp<span style="color:#f92672">.</span>add_tool(calculate, <span style="color:#e6db74">&#34;Calculator&#34;</span>, <span style="color:#e6db74">&#34;Calculate an expression&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
-</span></span><span style="display:flex;"><span>   mcp<span style="color:#f92672">.</span>run(<span style="color:#e6db74">&#34;sse&#34;</span>)
-</span></span></code></pre></div><p>大概是这样的：</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># server.py</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">mcp.server.fastmcp</span> <span class="kn">import</span> <span class="n">FastMCP</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">mcp</span> <span class="o">=</span> <span class="n">FastMCP</span><span class="p">(</span><span class="s2">&#34;test&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">mcp</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">9000</span>
+</span></span><span class="line"><span class="cl"><span class="n">mcp</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="s2">&#34;0.0.0.0&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">async</span> <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;计算一个数学表达式
+</span></span></span><span class="line"><span class="cl"><span class="s2">    Args:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        expression: 要计算的数学表达式
+</span></span></span><span class="line"><span class="cl"><span class="s2">
+</span></span></span><span class="line"><span class="cl"><span class="s2">    Returns:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        float: 计算结果
+</span></span></span><span class="line"><span class="cl"><span class="s2">    &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&#34;计算错误 </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">mcp</span><span class="o">.</span><span class="n">add_tool</span><span class="p">(</span><span class="n">calculate</span><span class="p">,</span> <span class="s2">&#34;Calculator&#34;</span><span class="p">,</span> <span class="s2">&#34;Calculate an expression&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">   <span class="n">mcp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&#34;sse&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>大概是这样的：</p>
 <ol>
 <li>导包起手式</li>
 <li>定义一个mcp server并设置IP和端口</li>
@@ -303,8 +318,12 @@
 
 </p>
 <p>首先将MCP Server运行起来</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>uv run server.py
-</span></span></code></pre></div><p>在MCP Inspector窗口中填入Server URL即可点击Connect尝试连接。</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">uv run server.py</span></span></code></pre></div>
+</div>
+<p>在MCP Inspector窗口中填入Server URL即可点击Connect尝试连接。</p>
 <p>
   <figure class="figure">
     <img class="img" src="image-14.png">
@@ -354,13 +373,13 @@
 <div class="video-wrapper">
     <video
     controls
-    src="video.mp4"
+    src="video.webm"
     
     
     >
         <p>
             Your browser doesn't support HTML5 video. Here is a
-            <a href="video.mp4">link to the video</a> instead.
+            <a href="video.webm">link to the video</a> instead.
         </p>
     </video>
 </div>

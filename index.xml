@@ -7,26 +7,26 @@
     <generator>Hugo</generator>
     <language>zh-cn</language>
     <copyright>gresces.github.io</copyright>
-    <lastBuildDate>Thu, 12 Jun 2025 19:25:11 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 13 Jun 2025 21:54:12 +0800</lastBuildDate>
     <atom:link href="https://gresces.github.io/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Scalene: Python分析器</title>
-      <link>https://gresces.github.io/posts/scalene/</link>
-      <pubDate>Thu, 12 Jun 2025 19:25:11 +0800</pubDate>
-      <guid>https://gresces.github.io/posts/scalene/</guid>
-      <description>&lt;p&gt;本文介绍一下SCALENE的实现原理。SCALENE是一个专门为Python设计的分析器，能够同时分析CPU时间、内存使用情况和GPU使用情况，并提供细粒度(行粒度)的性能信息。&lt;/p&gt;</description>
-    </item>
     <item>
       <title>软件漏洞排行</title>
       <link>https://gresces.github.io/posts/softwares-with-the-most-vulnerabilities/</link>
-      <pubDate>Wed, 11 Jun 2025 20:35:39 +0800</pubDate>
+      <pubDate>Fri, 13 Jun 2025 21:54:12 +0800</pubDate>
       <guid>https://gresces.github.io/posts/softwares-with-the-most-vulnerabilities/</guid>
       <description>&lt;p&gt;在进行程序分析时可能会想要知道哪些软件的漏洞更多，从而对已有的方法进行“回测”。本文提供了一个漏洞排行列表以供使用。&lt;/p&gt;</description>
     </item>
     <item>
+      <title>Scalene: Python分析器</title>
+      <link>https://gresces.github.io/posts/scalene/</link>
+      <pubDate>Thu, 12 Jun 2025 21:49:26 +0800</pubDate>
+      <guid>https://gresces.github.io/posts/scalene/</guid>
+      <description>&lt;p&gt;本文介绍一下SCALENE的实现原理。SCALENE是一个专门为Python设计的分析器，能够同时分析CPU时间、内存使用情况和GPU使用情况，并提供细粒度(行粒度)的性能信息。&lt;/p&gt;&#xA;&lt;p&gt;总之，按照文章的说明，它比之前的分析器都NB。&lt;/p&gt;</description>
+    </item>
+    <item>
       <title>基于n8n的MCP实用构建</title>
       <link>https://gresces.github.io/posts/agent-in-n8n/</link>
-      <pubDate>Tue, 10 Jun 2025 23:46:32 +0800</pubDate>
+      <pubDate>Wed, 11 Jun 2025 00:28:22 +0800</pubDate>
       <guid>https://gresces.github.io/posts/agent-in-n8n/</guid>
       <description>&lt;p&gt;本文提供：&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;在n8n中构建一个agent工作流&lt;/li&gt;&#xA;&lt;li&gt;在n8n中添加自定义mcp client&lt;/li&gt;&#xA;&lt;li&gt;使用python构建mcp server并在n8n工作流中连接&lt;/li&gt;&#xA;&lt;/ul&gt;</description>
     </item>
