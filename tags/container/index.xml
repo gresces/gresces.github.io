@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Container on Gresces</title>
+    <link>https://gresces.github.io/tags/container/</link>
+    <description>Recent content in Container on Gresces</description>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <copyright>gresces.github.io</copyright>
+    <lastBuildDate>Mon, 16 Jun 2025 18:41:43 +0800</lastBuildDate>
+    <atom:link href="https://gresces.github.io/tags/container/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用ssh连接toolbox</title>
+      <link>https://gresces.github.io/posts/use-sshd-in-toolbox/</link>
+      <pubDate>Mon, 16 Jun 2025 18:41:43 +0800</pubDate>
+      <guid>https://gresces.github.io/posts/use-sshd-in-toolbox/</guid>
+      <description>&lt;p&gt;使用vscode连接toolbox容器比较困难，使用ssh是其中一条比较简单的途径。&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

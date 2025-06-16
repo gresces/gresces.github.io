@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>
+    
+        使用ssh连接toolbox :: Gresces
+    
+</title>
+
+      <link rel="stylesheet" href="/css/main.min.css" integrity="" crossorigin="anonymous">
+
+
+      <script src="/js/main.js" integrity="" crossorigin="anonymous"></script>
+
+</head>
+
+<body id="main-container" class="grid-container">
+
+  <a href="/" id="header-icon">
+    <div class="outline no-select" style="height: 100%;display: grid; place-items: center;">
+    <h1 style="margin: 0; text-align: center;">Gresces</h1>
+</div>
+  </a>
+
+  <div class="header-menu outline no-select">
+    
+  <nav style="height:100%; display:grid;">
+    <ul id="menu-list">
+    
+      <a class="menu-list-li center-align" aria-current="true" class="ancestor" href="/posts/">Posts</a>
+    
+    
+      <a class="menu-list-li center-align" href="/tags/">Tags</a>
+    
+    </ul>
+  </nav>
+
+  </div>
+
+  <div class="header-control outline no-select">
+    <button id="theme-toggle">
+  <span id="theme-icon">[dark]</span>
+</button>
+  </div>
+
+  <div class="main outline">
+    
+
+  <div class="grid-container single-container">
+
+    <div class="single-title-container grid-container outline">
+
+      <div class="single-title-container-title center-align">
+        <h1 class="char-limit">使用ssh连接toolbox</h1>
+      </div>      
+
+      <div class="single-title-container-date">
+        <span class="date">
+          
+          
+          <time datetime="2025-06-16T18:41:43&#43;08:00">June 16, 2025</time>
+        </span>
+      </div>
+
+      <div class="single-title-container-author">
+        <span class="author">
+          
+            Guo Yangfan
+          
+        </span>
+      </div>
+    </div>
+
+    <div class="single-content outline">
+      <p>使用vscode连接toolbox容器比较困难，使用ssh是其中一条比较简单的途径。</p>
+<p>本文是<a href="https://jurf.github.io/2020/03/24/vscode-toolbox/">Integrating Fedora Toolbox into VS Code (with the help of SSH)</a>的译介，原作者Juraj Fiala。</p>
+<h2 id="创建一个toolbox容器">创建一个toolbox容器</h2>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">toolbox create <span class="nb">test</span>
+</span></span><span class="line"><span class="cl">toolbox enter test</span></span></code></pre></div>
+</div>
+<h2 id="在容器中使用运行sshd">在容器中使用运行sshd</h2>
+<p>在toolbox几乎不能在root环境下使用systemd,因此无法通过常规的sshd service的方式使用它。因此需要手动执行sshd运行openssh守护程序。</p>
+<h3 id="安装openssh-server">安装openssh-server</h3>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">dnf install openssh-server</span></span></code></pre></div>
+</div>
+<h3 id="手动运行openssh守护程序">手动运行openssh守护程序</h3>
+<p>由于不能通过systemd运行sshd，因此不能触发<code>sshd-keygen.target</code>来生成密钥，需要手动进行这一步骤。运行下面其中一条指令即可。</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">/usr/libexec/openssh/sshd-keygen rsa
+</span></span><span class="line"><span class="cl">/usr/libexec/openssh/sshd-keygen ecdsa
+</span></span><span class="line"><span class="cl">/usr/libexec/openssh/sshd-keygen ed25519</span></span></code></pre></div>
+</div>
+<p>修改容器中的<code>/etc/ssh/sshd_config</code>，添加下面的设置</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="c1"># For VS Code</span>
+</span></span><span class="line"><span class="cl">Port <span class="m">2234</span>                 <span class="c1"># Prevent conflicts with other SSH servers</span>
+</span></span><span class="line"><span class="cl">ListenAddress localhost   <span class="c1"># Don’t allow remote connections</span>
+</span></span><span class="line"><span class="cl">PermitEmptyPasswords yes  <span class="c1"># Containers lack passwords by default</span>
+</span></span><span class="line"><span class="cl">PermitUserEnvironment yes <span class="c1"># Allow setting DISPLAY for remote connections</span></span></span></code></pre></div>
+</div>
+<p>之后运行指令启动sshd</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">/usr/sbin/sshd</span></span></code></pre></div>
+</div>
+<h2 id="连接">连接</h2>
+<p>在宿主机的配置文件<code>~/.ssh/config</code>中添加如下行：</p>
+<div class="md-codeblock outline">
+
+
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">Host toolbox-test
+</span></span><span class="line"><span class="cl">    HostName localhost
+</span></span><span class="line"><span class="cl">    Port <span class="m">2234</span></span></span></code></pre></div>
+</div>
+<p>之后就可以使用<code>ssh toolbox-test</code>连接toolbox开发容器了。</p>
+<h2 id="注意">注意</h2>
+<p>原作者提示：</p>
+<blockquote>
+<p>Bonus tip: Open your projects via /var/home/… instead of /home/… to avoid symlink bugs.</p>
+</blockquote>
+<p>我在使用中没有遇到这类bug。</p>
+<hr>
+<ol>
+<li><a href="https://jurf.github.io/2020/03/24/vscode-toolbox/">Integrating Fedora Toolbox into VS Code (with the help of SSH)</a></li>
+</ol>
+    </div>
+
+    <div class="single-tags">
+      
+  <div>
+    Tags:
+        <a href="/tags/software/">[Software]</a>
+        <a href="/tags/tool/">[Tool]</a>
+        <a href="/tags/container/">[Container]</a>
+  </div>
+
+
+    </div>
+  </div>
+
+  </div>
+
+  
+    <div class="right-main">
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#创建一个toolbox容器">创建一个toolbox容器</a></li>
+    <li><a href="#在容器中使用运行sshd">在容器中使用运行sshd</a>
+      <ul>
+        <li><a href="#安装openssh-server">安装openssh-server</a></li>
+        <li><a href="#手动运行openssh守护程序">手动运行openssh守护程序</a></li>
+      </ul>
+    </li>
+    <li><a href="#连接">连接</a></li>
+    <li><a href="#注意">注意</a></li>
+  </ul>
+</nav>
+    </div>
+  
+
+  <div class="left-footer outline">
+
+  </div>
+
+  <div class="footer outline">
+    
+    <p style="text-align: center;">© 2025 Guo Yangfan | gresces.github.io</p>
+
+
+  </div>
+
+  <div class="right-footer outline">
+
+  </div>
+
+</body>
+
+</html>
