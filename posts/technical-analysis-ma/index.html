@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>
+    
+        技术分析指标-#1 MA :: Gresces
+    
+</title>
+
+      <link rel="stylesheet" href="/css/main.min.css" integrity="" crossorigin="anonymous">
+
+
+
+
+      <script src="/js/main.js" integrity="" crossorigin="anonymous"></script>
+
+
+
+</head>
+
+<body id="main-container" class="grid-container">
+
+  <a href="/" id="header-icon">
+    <div class="outline no-select" style="height: 100%;display: grid; place-items: center;">
+    <h1 style="margin: 0; text-align: center;">Gresces</h1>
+</div>
+  </a>
+
+  <div class="header-menu outline no-select">
+    
+  <nav style="height:100%; display:grid;">
+    <ul id="menu-list">
+    
+      <a class="menu-list-li center-align" aria-current="true" class="ancestor" href="/posts/">Posts</a>
+    
+    
+      <a class="menu-list-li center-align" href="/tags/">Tags</a>
+    
+    </ul>
+  </nav>
+
+  </div>
+
+  <div class="header-control outline no-select">
+    <button id="theme-toggle">
+  <span id="theme-icon">[dark]</span>
+</button>
+  </div>
+
+  <div class="main outline">
+    
+
+  <div class="grid-container single-container">
+
+    <div class="single-title-container grid-container outline">
+
+      <div class="single-title-container-title center-align">
+        <h1 class="char-limit">技术分析指标-#1 MA</h1>
+      </div>      
+
+      <div class="single-title-container-date">
+        <span class="date">
+          
+          
+          <time datetime="2025-08-06T23:52:37&#43;08:00">August 6, 2025</time>
+        </span>
+      </div>
+
+      <div class="single-title-container-author">
+        <span class="author">
+          
+            Guo Yangfan
+          
+        </span>
+      </div>
+    </div>
+
+    <div class="single-content outline">
+      <p>指标是一些对于已有市场数据的处理，因此不能表明未来的市场行情，仅能作为一个用于判断将来可能的趋势的判据，具体操作时需要自行研判行情。
+本文介绍MA指标，以及衍生的EMA等指标，并介绍其常见的用法（金叉、死叉）。</p>
+<h2 id="信号处理中的指标">信号处理中的指标</h2>
+<p>从信号处理的角度来看，市场数据是一种时序信号，移动平均线（MA）本质上是一类时域滤波器，用于对金融时间序列（价格信号）进行平滑处理，提取趋势成分并抑制噪声。通常情况下，我们使用的市场数据以时间为间隔，例如股市中常以交易日作为时间间隔，在加密市场中使用5min作为一个时间间隔，其open、high、low、close数据分别构成了一个离散信号。这个信号可以使用$x[n]$来表示时间（即只考虑相对时间，而不考虑绝对时间）。</p>
+<h3 id="ma通用模型">MA通用模型</h3>
+<p>所有MA类型都可以视为一个线性时不变系统（LTI），其输出是输入信号的加权和：
+$$y[n] = \sum_{k=0}^{N-1}h[k]\cdot x[n-k]$$
+其中：</p>
+<ul>
+<li>$x[n]$表示输入信号（价格时序信号）</li>
+<li>$y[n]$表示输出信号（MA时序信号）</li>
+<li>$h[k]$表示系统冲激相应（权重系数）</li>
+<li>$N$表示时间窗口长度（周期）</li>
+</ul>
+<p>由此可以看到，不同MA类型的主要区别在于权重系数$h[k]$的分配方式上。</p>
+<h3 id="sma简单移动平均">SMA简单移动平均</h3>
+<p>$$x_{SMA}[n] = \frac1N\sum^{N-1}_{k=0} x[n-k]$$</p>
+<p>这是一个矩形窗口滤波器，其冲激响应为</p>
+<p>$$
+h_{SMA}[k] =
+\begin{cases}
+\frac{1}{N} &amp;, 0 \le k \le N \
+0 &amp;, \text{other} \
+\end{cases}
+$$</p>
+<p>这个滤波器的本质是一个低通滤波器，其幅频响应如下，其截至频率为$f_c \approx \frac{0.443}N$</p>
+<p>
+  <figure class="figure">
+    <img class="img" src="./image.png" alt="Figure1" id="fig-Figure1">
+    <figcaption class="center-align caption-text">
+      Figure1
+      幅频响应，C点为截至频率
+    </figcaption>
+  </figure>
+
+</p>
+<p>其群延迟为$\frac{N-1}2$个样本，因此SMA具有滞后性。</p>
+<p>SMA是一段样本的平均值，使曲线变得平滑。</p>
+<h3 id="ema指数移动平均">EMA指数移动平均</h3>
+<p>$$h_{EMA}[k] = \alpha (1-\alpha)^k, k&gt;0$$
+其中$\alpha$表示平滑因子，通常$\alpha = \frac1{N+1}$，$\alpha$越小，曲线越平滑。这是一个指数衰减的滤波器。</p>
+<p>其等价的递归数学表达式为：
+$$x_{EMA}[n] = \alpha \cdot x[n]+(1−\alpha)\cdot x_{EMA}​[n−1]$$</p>
+<h3 id="wma加权移动平均">WMA加权移动平均</h3>
+<p>$$h_{WMA}[k] = \frac{2(N-k)}{N(N+1)}, 0\le k&lt;N$$</p>
+<p>即一个三角窗型滤波器，其频率响应是SMA的自卷积，即$sinc^2$，图像上看主瓣更窄，旁瓣衰减更快，因此过滤的高频信号更少。</p>
+<h3 id="小结">小结</h3>
+<p>卷积核$h[k]$决定了系统的“记忆长度”，SMA和WMA记忆有限（仅和窗口长度$N$中的数据有关），EMA理论上记忆是无限的，但实际上有效记忆长度为$3/\alpha$。</p>
+<p>对于各个指标来说，卷积核越宽，平滑能力越强，但相位之后也越多，时间滞后越长。</p>
+<table class="md-table" cellpadding="0" cellspacing="0">
+  <thead>
+      <tr>
+          <th style="text-align: center">指标</th>
+          <th style="text-align: center">记忆长度</th>
+          <th style="text-align: center">滞后</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center">SMA</td>
+          <td style="text-align: center">N</td>
+          <td style="text-align: center">$\frac{N-1}2$</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">EMA</td>
+          <td style="text-align: center">$\infty$</td>
+          <td style="text-align: center">$\frac{1-\alpha}{\alpha} = \frac{N-1}2$</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">WMA</td>
+          <td style="text-align: center">N</td>
+          <td style="text-align: center">$\frac{N-1}3$</td>
+      </tr>
+  </tbody>
+</table>
+<p>实际使用时应当结合多个指标共同研判。如果需要低滞后，选择WMA或EMA（大$\alpha$）,如果需要高平滑，选择SMA或EMA（小$\alpha$）。</p>
+<h2 id="技术分析应用">技术分析应用</h2>
+<h3 id="金叉死叉">金叉/死叉</h3>
+<p>当短期MA（窄核）与长期MA（宽核）的卷积输出相交时：</p>
+<p><strong>金叉</strong>：窄核的响应速度更快，先捕捉到趋势变化，短MA上升穿过长MA</p>
+<p><strong>死叉</strong>：宽核的慢响应最终确认趋势反转，短MA向下穿过长MA</p>
+<h3 id="macd">MACD</h3>
+<p>这一部分内容较多，留作后篇。</p>
+<h2 id="总结">总结</h2>
+<p>本文中介绍了MA家族的三个技术指标：SMA、EMA、WMA的数学表示和信号处理原理，之后简单介绍了在技术分析中的简单应用，即金叉及死叉。三者在使用时需要注意滞后性和非预测性。</p>
+    </div>
+
+    <div class="single-tags">
+      
+  <div>
+    Tags:
+        <a href="/tags/crypto/">[Crypto]</a>
+        <a href="/tags/technical-analysis/">[Technical-Analysis]</a>
+  </div>
+
+
+    </div>
+  </div>
+
+  </div>
+
+  
+    <div class="right-main">
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#信号处理中的指标">信号处理中的指标</a>
+      <ul>
+        <li><a href="#ma通用模型">MA通用模型</a></li>
+        <li><a href="#sma简单移动平均">SMA简单移动平均</a></li>
+        <li><a href="#ema指数移动平均">EMA指数移动平均</a></li>
+        <li><a href="#wma加权移动平均">WMA加权移动平均</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+    <li><a href="#技术分析应用">技术分析应用</a>
+      <ul>
+        <li><a href="#金叉死叉">金叉/死叉</a></li>
+        <li><a href="#macd">MACD</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+    </div>
+  
+
+  <div class="left-footer outline">
+
+  </div>
+
+  <div class="footer outline">
+    
+    <p style="text-align: center;">© 2025 Guo Yangfan | gresces.github.io</p>
+
+
+  </div>
+
+  <div class="right-footer outline">
+
+  </div>
+
+</body>
+
+</html>
